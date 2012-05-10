@@ -1,0 +1,78 @@
+Design Discussion:
+
+Multiple single-class storage plugins (plugins explicitly whitelisted)
+vs different class of storage plugins (classes whitelisted).
+
+I see a few possibilities for storage types:
+
+   1. a block device
+   2. a directory
+   3. a raw file
+   4. a qcow2 file
+   5. a sheepdog volume
+
+A block device is very generic, and is supported natively by KVM.
+
+OpenVZ & LXC require directories, which could, for example, be a
+mounted filesystem of a block device, or on NFS.
+
+A raw file could be used directly by KVM, but used as a loopback file,
+formatted, and mounted for OpenVZ/LXC.
+
+QCOW2 & Sheepdog are KVM specific.
+
+Option #1 - Explicit approach
+-----------------------------
+LXC/OpenVZ VMs support block devices directly, formats and mounts
+them itself.
+
+LXC/OpenVZ VMs support raw files (or loopback qcow2 files) via a
+similar mechanism.
+
+They also support directories (eg. maybe a storage.get_directory()
+method which they'll use if it returns something)
+
+Nothing precludes LXC/OpenVZ from sharing the same code to wrap block
+devices or directories.
+
+Option #2 - Generic adapter approach
+------------------------------------
+LXC/OpenVZ state that they support the directory class of plugin,
+and then call storage.get_directory().
+
+A directory class of storage plugin could wrap a block device or a raw
+file storage plugin.  The configuration for this would be be in
+geats.conf.
+
+   eg #1. plugin "ext3_dir_block" wraps the "locallvm" plugin, and
+          passes in its own configuration for this instance of the
+          locallvm plugin.
+
+   eg #2. plugin "xfs_dir_file" wraps the "sparsefile_nfs" "raw"-class plugin
+          which wraps the "nfs_dir" plugin. The end result is an XFS
+          filesystem on a loopback device using a sparse file on NFS.
+
+LXC/OpenVZ still explicitly list the plugins in valid_storage_types.
+
+Option #3 - Explicit adapter approach
+-------------------------------------
+
+Similar to option #2, but support an explicit wrapper_factory key.
+This is a second storage plugin that's called with the primary
+storage plugin as an argument.  This could even be a list of wrappers,
+and the first would wrap the second, which would wrap the primary.
+
+Wrapper's would be aware that they're wrappers, and would have to
+ensure unique keys for any additional runtime information they
+require.
+
+LXC/OpenVZ still explicitly list the plugins in valid_storage_types.
+
+Variation of #2/#3
+------------------
+
+LXC/OpenVZ only lists the storage "class" (eg. directory, block, file,
+qcow2)
+
+I think this is overkill, since we have this in the configuration
+file.

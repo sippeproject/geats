@@ -1,0 +1,22 @@
+# lxc instance called 'debian'
+vm_type: lxc
+name: debian
+description: Debian
+# only eth0 is used by LXC VMs
+network:
+  eth0:
+    ipaddress: 192.168.1.23
+    netmask: 255.255.255.0
+    gateway: 192.168.1.1
+    hwaddr: 02:bc:8a:e9:f0:0a # must be unique on LAN!
+    bridge: br0 # which bridge device to bind to
+# only the first storage volume is used by LXC VMs
+storage:
+  - type: dummyadapter
+    name: root
+    directory: /data/vms/debian
+# LXC-specific variables:
+# which tarball to use, as found in vms.lxc.template_path
+template: debian-squeeze
+# if transient, remove directory after finished
+transient: true

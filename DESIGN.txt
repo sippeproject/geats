@@ -1,0 +1,53 @@
+Terminology
+-----------
+
+Hypervisor Host (HH)
+  Physical machine hosting VMs
+
+Virtual Machine (VM)
+  Virtual Machine (eg. KVM, Xen) or Container (OpenVZ, LXC) running on hypervisor.
+
+Hypervisor
+  Software to control one or many VMs (eg. KVM, libvirt, LXC)
+
+Management API
+  An internal API to control VMs running on Hypervisor Host
+
+Storage Volume
+  A single volume in a VM (eg. /dev/vda or /)
+
+Storage Plugin
+  An Internal API to manage a Storage Volume. This may create
+  LVM volumes, or a QCOW2 file, or simply return a directory
+  location.
+
+Network Device
+  Every VM can have zero, one, or maybe more network devices, which can
+  be configured in various ways.
+
+Template
+  A template dictates what should be installed on the VMs primary
+  storage device.  A template simply has a name.  This does not
+  necessarily correspond to an image file such as an AMI or a QCOW2
+  template.  For OpenVZ & LXC, it might be a tarball that will be
+  extracted onto the storage device.  For the hypothetical KVM-netboot
+  VM type, it could supply the name of a pxe configuration file to use.
+
+Relationships
+-------------
+
+* HH _HAS_ a Management API.
+* HH _HAS_ a cmdline tool using Management API.
+* HH _COULD HAVE_ a REST API using Management API.
+* HH _COULD HAVE_ a cmdline JSON API, as described
+  in the "Actions in external scripts" secton of
+  http://docs.puppetlabs.com/mcollective/simplerpc/agents.html
+* VM _HAS_ Storage Volumes.
+* A Storage Volume _HAS_ a Storage Plugin.
+* A Storage Plugin _HAS_ a Storage Plugin Type.
+* A VM class _SUPPORTS_ certain Storage Plugin Types.
+* A VM SHOULD have an template type & name (eg. pxe:centos6.2,
+  lxc:debian-squeeze), but this is VM-type specific, and template
+  type may be omitted for the default type.
+* A VM has one or more network devices.
+

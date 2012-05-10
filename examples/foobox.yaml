@@ -1,0 +1,16 @@
+#
+## Foobox is a great box of fooooo
+#
+name: foobox
+description: The Foo Box
+network:
+  eth0:
+    ipaddress: 192.168.1.55
+    netmask: 255.255.255.0
+    gateway: 192.168.1.1
+    hwaddr: 02:bc:8a:e9:f0:0b
+storage:
+  - name: dummy
+    type: dummy
+template: debian
+vm_type: lxc

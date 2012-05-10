@@ -1,0 +1,162 @@
+#!/usr/bin/python
+
+from geats.manager import Manager
+import yaml
+
+import sys
+import os.path
+import argparse
+import geats.config
+
+manager = Manager()
+
+p_global = argparse.ArgumentParser(add_help=False)
+p_global.add_argument("--verbose", action='store_true')
+p_global_subs = p_global.add_subparsers(title="subcommands", description="valid subcommands")
+
+# helper function to create a subcommand with argparse
+def make_subcommand(command, helptext, function):
+    global p_global_subs
+    parser = p_global_subs.add_parser(command, help=helptext)
+    parser.set_defaults(func=function)
+    return parser
+
+def cmd_list(args):
+    global manager
+    for vm_name in manager.list_vms():
+        vm = manager.get_vm(vm_name)
+        state, substate = vm.get_state()
+        if vm.is_locked():
+            print("{0}: {1}/{2} [LOCKED] ({3})".format(vm_name, state, substate, vm.get_description()))
+        else:
+            print("{0}: {1}/{2} ({3})".format(vm_name, state, substate, vm.get_description()))
+p_list = make_subcommand("list", "List all VMs", cmd_list)
+
+def cmd_start(args):
+    try:
+        vm = manager.get_vm(args.vm_name)
+        vm.start()
+        print("start: OK ({0})".format(args.vm_name))
+    except KeyError as e:
+        print(e.message)
+p_start = make_subcommand("start", "Start a VM", cmd_start)
+p_start.add_argument("vm_name", type=str, help="Name of VM")
+
+def cmd_stop(args):
+    try:
+        vm = manager.get_vm(args.vm_name)
+        vm.stop()
+        print("stop: OK ({0})".format(args.vm_name))
+    except KeyError as e:
+        print(e.message)
+p_stop = make_subcommand("stop", "Stop a VM", cmd_stop)
+p_stop.add_argument("vm_name", type=str, help="Name of VM")
+
+def cmd_shutdown(args):
+    try:
+        vm = manager.get_vm(args.vm_name)
+        vm.shutdown()
+        print("shutdown: OK ({0})".format(args.vm_name))
+    except KeyError as e:
+        print(e.message)
+p_shutdown = make_subcommand("shutdown", "Shutdown a VM", cmd_shutdown)
+p_shutdown.add_argument("vm_name", type=str, help="Name of VM")
+
+def cmd_migrate(args):
+    try:
+        vm = manager.get_vm(args.vm_name)
+        vm.migrate(args.destination)
+        print("migrate: OK ({0})".format(args.vm_name))
+    except KeyError as e:
+        print("migrate: {0} ({1})".format(e.message, args.vm_name))
+p_migrate = make_subcommand("migrate", "Migrate a VM to another hypervisor", cmd_migrate)
+p_migrate.add_argument("vm_name", type=str, help="Name of VM")
+p_migrate.add_argument("destination", type=str, help="Destination hypervisor")
+
+
+def cmd_info(args):
+    try:
+        vm = manager.get_vm(args.vm_name)
+        state = "/".join(vm.get_state())
+        info = {
+            "definition" : vm.get_definition(),
+            "state": state,
+        }
+        print(yaml.dump(info, default_flow_style=False))
+    except KeyError as e:
+        print(e.message)
+p_dump = make_subcommand("info", "Dump the VM definition", cmd_info)
+p_dump.add_argument("vm_name", type=str, help="Name of VM")
+
+def cmd_status(args):
+    statuses = []
+    for vm_name in sorted(manager.list_vms()):
+        try:
+            vm = manager.get_vm(vm_name)
+            state = "/".join(vm.get_state())
+            info = {
+                "definition" : vm.get_definition(),
+                "state": state,
+            }
+            print "# {0}:".format(vm_name)
+            print(yaml.dump(info, default_flow_style=False))
+        except RuntimeError as e:
+            print "# {0}: {1}".format(vm_name, e.message)
+p_status = make_subcommand("status", "Show the status of all VMs", cmd_status)
+
+def cmd_define(args):
+    definition = yaml.load(args.yamlfile)
+    args.yamlfile.close()
+    vm = manager.define_vm(args.vm_name, definition)
+    print("define: OK ({0})".format(args.vm_name))
+p_define = make_subcommand("define", "Define a new VM", cmd_define)
+p_define.add_argument("vm_name", type=str, help="Name of VM")
+p_define.add_argument("yamlfile", type=file, help="YAML file containing VM definition")
+
+def cmd_undefine(args):
+    try:
+        vm = manager.get_vm(args.vm_name)
+        vm.undefine()
+        print("undefine: OK ({0})".format(args.vm_name))
+    except KeyError as e:
+        print(e.message)
+p_undefine = make_subcommand("undefine", "Undefine a VM", cmd_undefine)
+p_undefine.add_argument("vm_name", type=str, help="Name of VM")
+
+def cmd_deprovision(args):
+    try:
+        vm = manager.get_vm(args.vm_name)
+        vm.deprovision()
+        print("deprovision: OK ({0})".format(args.vm_name))
+    except KeyError as e:
+        print(e.message)
+p_deprovision = make_subcommand("deprovision", "Deprovision a VM", cmd_deprovision)
+p_deprovision.add_argument("vm_name", type=str, help="Name of VM")
+
+def cmd_lock(args):
+    try:
+        vm = manager.get_vm(args.vm_name)
+        vm.lock()
+    except KeyError as e:
+        print(e.message)
+    except NotImplementedError as e:
+        print("lock: NotImplementedError ({0})".format(args.vm_name))
+        sys.exit(1)
+p_lock = make_subcommand("lock", "Lock a VM", cmd_lock)
+p_lock.add_argument("vm_name", type=str, help="Name of VM")
+
+def cmd_unlock(args):
+    try:
+        vm = manager.get_vm(args.vm_name)
+        vm.unlock()
+    except KeyError as e:
+        print(e.message)
+    except NotImplementedError as e:
+        print("lock: NotImplementedError ({0})".format(args.vm_name))
+        sys.exit(1)
+p_unlock = make_subcommand("unlock", "Unlock a VM", cmd_lock)
+p_unlock.add_argument("vm_name", type=str, help="Name of VM")
+
+
+args = p_global.parse_args()
+args.func(args)
