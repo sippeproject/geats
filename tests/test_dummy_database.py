@@ -2,7 +2,7 @@
 
 import unittest
 
-from ..databases import DummyDatabase
+from ..databases.dummydatabase import DummyDatabase
 
 class DummyDatabaseTest(unittest.TestCase):
     def setUp(self):

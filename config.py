@@ -53,4 +53,9 @@ class Config(object):
         db_config = self.get_database_config()
         if "factory" in db_config:
             return dynamic_lookup(db_config["factory"])
-        
+    def get_lock_config(self):
+        return self.config.get("lock", {})
+    def get_lock_factory(self):
+        lock_config = self.get_lock_config()
+        if "factory" in lock_config:
+            return dynamic_lookup(lock_config["factory"])

@@ -16,18 +16,6 @@ class IVirtualMachine:
         An example might be "paused/migrating".  By default, substate is
         the same as state.
         """
-    def lock():
-        """
-        Lock the VM - do not allow state changes until it is unlocked
-        """
-    def unlock():
-        """
-        Unlock the VM
-        """
-    def is_locked():
-        """
-        Is the VM currently locked?
-        """
     def define():
         """
         Do any actions to define this VM in the hypervisor.

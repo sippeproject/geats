@@ -26,10 +26,7 @@ def cmd_list(args):
     for vm_name in manager.list_vms():
         vm = manager.get_vm(vm_name)
         state, substate = vm.get_state()
-        if vm.is_locked():
-            print("{0}: {1}/{2} [LOCKED] ({3})".format(vm_name, state, substate, vm.get_description()))
-        else:
-            print("{0}: {1}/{2} ({3})".format(vm_name, state, substate, vm.get_description()))
+        print("{0}: {1}/{2} ({3})".format(vm_name, state, substate, vm.get_description()))
 p_list = make_subcommand("list", "List all VMs", cmd_list)
 
 def cmd_start(args):

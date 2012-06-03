@@ -10,10 +10,12 @@ from exceptions import UnsupportedStorageType
 
 class Manager(object):
     def __init__(self, database=None, config=None):
+        # config
         if config:
             self.config = config
         else:
             self.config = config = Config()
+        # database
         if database:
             self.database = database
         else:
@@ -96,3 +98,11 @@ class Manager(object):
         Return a list of all VMs by name
         """
         return self.database.list_vms()
+
+    def get_lock(self, key):
+        """
+        Return a Lock instance for the given key.
+        """
+        lock_config = self.config.get_lock_config()
+        lock_factory = self.config.get_lock_factory()
+        return lock_factory(key, lock_config)

@@ -17,14 +17,6 @@ This handles the lifecycle of a local VM, including:
   * Undefining VM
   * Disabling/Deprovisioning storage volumes
   * Deprovisioning VM
-In addition, it also supports:
-  * Lock a VM (cannot be started/stopped/undefined)
-  * Lock entire VM provisioning system (ie. hypervisor)
-  * Unlock a VM
-  * Unlock VM
-  * Call a program to check whether we're allowed to
-    define/start a VM
-  * Call a program to notify VM state changes
 
 When a VM is first defined, a specific structure is passed in,
 containing configuration for compute, storage, and network.  Depending

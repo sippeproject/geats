@@ -24,6 +24,8 @@ class AbstractVirtualMachine(object):
                 vol = self.manager._make_storage_volume(
                     storage["type"], storage, self)
                 self.storage_volumes.append(vol)
+        self.lock = self.manager.get_lock("vm-"+self.name)
+
 
     def get_name(self):
         return self.name
@@ -34,31 +36,24 @@ class AbstractVirtualMachine(object):
     def get_state(self):
         raise NotImplementedError
 
-    def lock(self):
-        raise NotImplementedError
-
-    def unlock(self):
-        raise NotImplementedError
-
-    def is_locked(self):
-        return False
-
     def define(self):
-        self._define()
-        try:
-            self.define_storage()
-        except:
-            try: self.undefine_storage()
-            except: pass
-            raise
+        with self.lock:
+            self._define()
+            try:
+                self.define_storage()
+            except:
+                try: self.undefine_storage()
+                except: pass
+                raise
 
     # stop VM if running, deactivate storage, undefine VM
     def undefine(self):
-        self.stop()
-        self.deactivate_storage()
-        self._undefine()
-        ### XXX can I find a nicer way?
-        self.manager.database.undefine_vm(self.name)
+        with self.lock:
+            self.stop()
+            self.deactivate_storage()
+            self._undefine()
+            ### XXX can I find a nicer way?
+            self.manager.database.undefine_vm(self.name)
 
     # deprovision can be called instead of undefine to
     # do additional cleanup actions, like wiping the
@@ -68,33 +63,36 @@ class AbstractVirtualMachine(object):
 
     # if not started activate storage, start VM
     def start(self):
-        state, substate = self.get_state()
-        # 1. Return without exception if already running.
-        if state == "running" and substate != "paused":
-            return
-        # 2. Activate each storage volume.
-        # 3. Raise a Storage exception if failed.
-        self.activate_storage()
-        # 4. Start the VM by calling adapter.vm_start(self)
-        # 5. Raise an Exception if it failed.
-        self._start()
+        with self.lock:
+            state, substate = self.get_state()
+            # 1. Return without exception if already running.
+            if state == "running" and substate != "paused":
+                return
+            # 2. Activate each storage volume.
+            # 3. Raise a Storage exception if failed.
+            self.activate_storage()
+            # 4. Start the VM by calling adapter.vm_start(self)
+            # 5. Raise an Exception if it failed.
+            self._start()
 
     # stop VM if not running
     def stop(self):
-        state, substate = self.get_state()
-        # 1. Return without error if VM is already stopped.
-        if state == "stopped":
-            return
-        # 2. Stop the VM by calling adapter.vm_stop(self)
-        # 3. Raise an Exception if it failed.
-        self._stop()
+        with self.lock:
+            state, substate = self.get_state()
+            # 1. Return without error if VM is already stopped.
+            if state == "stopped":
+                return
+            # 2. Stop the VM by calling adapter.vm_stop(self)
+            # 3. Raise an Exception if it failed.
+            self._stop()
 
     # politely ask the VM to shut down
     def shutdown(self):
-        state, substate = self.get_state()
-        if state == "stopped":
-            return
-        self._shutdown()
+        with self.lock:
+            state, substate = self.get_state()
+            if state == "stopped":
+                return
+            self._shutdown()
 
     def migrate(self, destination):
         raise NotImplementedError
