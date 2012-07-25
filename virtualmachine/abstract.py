@@ -48,8 +48,8 @@ class AbstractVirtualMachine(object):
 
     # stop VM if running, deactivate storage, undefine VM
     def undefine(self):
+        self.stop()
         with self.lock:
-            self.stop()
             self.deactivate_storage()
             self._undefine()
             ### XXX can I find a nicer way?
