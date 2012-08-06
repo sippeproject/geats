@@ -86,6 +86,10 @@ class AbstractVirtualMachine(object):
             # 3. Raise an Exception if it failed.
             self._stop()
 
+    def reboot(self):
+        self.stop()
+        self.start()
+
     # politely ask the VM to shut down
     def shutdown(self):
         with self.lock:

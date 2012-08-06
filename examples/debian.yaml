@@ -4,8 +4,8 @@ name: debian
 description: Debian
 # only eth0 is used by LXC VMs
 network:
-  eth0:
-    ipaddress: 192.168.1.23
+  - name: eth0
+    ipaddr: 192.168.1.23
     netmask: 255.255.255.0
     gateway: 192.168.1.1
     hwaddr: 02:bc:8a:e9:f0:0a # must be unique on LAN!

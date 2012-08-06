@@ -86,6 +86,7 @@ class LXCVirtualMachine(AbstractVirtualMachine):
         config_directory_prefix = self.config.get("config_directory_prefix",
                                                   "/var/lib/lxc")
         return os.path.join(config_directory_prefix, self.get_name())
+
     def _get_rootfs_directory(self):
         """Directory for the rootfs of this LXC container"""
         #CONFVAR# default_rootfs_prefix: directory to create $vmname/rootfs if storage plugin doesn't supply a directory [None]
@@ -112,13 +113,16 @@ class LXCVirtualMachine(AbstractVirtualMachine):
         template = self.definition['template']
         targz = os.path.join("%s/%s.tar.gz" % (template_path, template,))
         #DEFVAR# network: must contain a single eth0 interface with ipaddress, netmask, gateway, hwaddr, and bridge
-        network = self.definition.get('network')
-        eth0 = network.get('eth0')
-        ip = eth0['ipaddress']
-        netmask = eth0['netmask']
-        gateway = eth0['gateway']
-	hwaddr = eth0['hwaddr']
-        bridge = eth0['bridge']
+        try:
+            network = self.definition.get('network')
+            eth0 = network[0]
+            ip = eth0['ipaddr']
+            netmask = eth0['netmask']
+            gateway = eth0['gateway']
+	    hwaddr = eth0['hwaddr']
+            bridge = eth0['bridge']
+        except KeyError, IndexError:
+            raise VMException("Missing or incomplete network definition")
         ram = self.definition.get('ram', 1024)
         rootfs = self._get_rootfs_directory()
         config_directory_prefix = self.config.get("config_directory_prefix",
@@ -128,7 +132,7 @@ class LXCVirtualMachine(AbstractVirtualMachine):
         if not os.path.exists(confdir):
             os.mkdir(confdir)
         # create LXC config file
-        create_lxc_config(conffile, rootfs, name, ip, netmask, hwaddr, ram=ram)
+        create_lxc_config(conffile, rootfs, name, ip, netmask, hwaddr, ram=ram, bridge=bridge)
 
         # unless already unpacked, unpack template tarball and create firstboot config file
         hostnamefile = os.path.join(rootfs, "etc/hostname")
@@ -147,18 +151,24 @@ class LXCVirtualMachine(AbstractVirtualMachine):
             fd.write(name+"\n")
         finally:
             fd.close()
+
     def _lxc_bin_path(self):
         #CONFVAR# lxc_bin_path: path containing lxc-start and lxc-stop [/usr/bin]
         return self.config.get("lxc_bin_path", "/usr/bin")
+
     def _cgroup_path(self):
         #CONFVAR# cgroup_path: where cgroup filesystem is mounted [/cgroup]
         return self.config.get("cgroup_path", "/cgroup")
+
     def _start(self):
         os.system("%s/lxc-start -d -n %s" % (self._lxc_bin_path(), self.name,))
+
     def _stop(self):
         os.system("%s/lxc-stop -n %s" % (self._lxc_bin_path(), self.name,))
+
     def _shutdown(self):
         os.system("%s/lxc-stop -n %s" % (self._lxc_bin_path(), self.name,))
+
     def _undefine(self):
         #DEFVAR# transient: if this VM is transient, we will explicitly rm -rf the rootfs on undefine [False]
         transient = self.definition.get("transient", False)
@@ -168,13 +178,24 @@ class LXCVirtualMachine(AbstractVirtualMachine):
             if os.path.exists(rootfs):
                 shutil.rmtree(rootfs)
         cleanup_lxc(config_directory, rootfs)
+
+    def get_substate(self):
+        return getattr(self, "substate", None)
+
     def get_state(self):
-        if os.path.isdir(os.path.join(self._cgroup_path(), self.name)):
-            return "running", "running"
+        if os.path.isdir(os.path.join(self._cgroup_path(), "cpu/lxc", self.name)):
+            return "running", self.get_substate() or "running"
         else:
-            return "stopped", "stopped"
+            return "stopped", self.get_substate() or "stopped"
+
     def get_cpu_usage(self):
-        return 1
+        return 1 # FIXME
+
     def get_memory_usage(self):
-        return 1024
+        fmemusage = os.path.join(self._cgroup_path(), "memory/lxc",
+            self.get_name(), "memory.usage_in_bytes")
+        if os.path.exists(fmemusage):
+            with open(fmemusage, 'rb') as fd:
+                return int(int(fd.read())/1024.0/1024.0)
+        return -1
 

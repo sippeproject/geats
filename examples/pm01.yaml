@@ -4,8 +4,8 @@
 name: pm01
 description: Puppet Master
 network:
-  eth0:
-    ipaddress: 192.168.1.27
+  - name: eth0
+    ipaddr: 192.168.1.27
     netmask: 255.255.255.0
     gateway: 192.168.1.1
     hwaddr: 02:bc:8a:27:f0:0b
