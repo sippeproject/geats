@@ -183,6 +183,11 @@ class LXCVirtualMachine(AbstractVirtualMachine):
         return getattr(self, "substate", None)
 
     def get_state(self):
+        # older kernels have everything in one dir
+        if os.path.exists(os.path.join(self._cgroup_path(), "cpu.shares")) \
+        and os.path.isdir(os.path.join(self._cgroup_path(), self.name)):
+            return "running", self.get_substate() or "running"
+        # newer kernels
         if os.path.isdir(os.path.join(self._cgroup_path(), "cpu/lxc", self.name)):
             return "running", self.get_substate() or "running"
         else:
