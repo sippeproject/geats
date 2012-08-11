@@ -23,14 +23,24 @@ class Manager(object):
             db_factory = config.get_database_factory()
             self.database = db_factory(db_config)
 
-    def _make_virtual_machine(self, vm_definition):
+    def _make_virtual_machine(self, vm_name, vm_definition):
         """
         Given the vm_type and vm_definition, instantiate the
         right class to manage a VM.  Note: We MUST call
         vm.define() before everything else.
         """
-        # TODO: Do dynamic lookup of VM classes based on configuration
-        vm_type = vm_definition['vm_type']
+        if not isinstance(vm_definition, dict):
+            raise ValueError("vm_definition parameter must be of type dict")
+        if not vm_definition.has_key('name'):
+            vm_definition['name'] = vm_name
+        elif vm_definition['name'] != vm_name:
+            raise InvalidVMDefinition("Name in VM definition differs from name in call")
+        if not vm_definition.has_key('description'):
+            vm_definition['description'] = vm_definition['name']
+        if vm_definition.has_key('vm_type'):
+            vm_type = vm_definition['vm_type']
+        else:
+            raise InvalidVMDefinition("No type set for VM")
 
         vm_factory = self.config.get_vm_factory(vm_type)
         if vm_factory:
@@ -60,28 +70,24 @@ class Manager(object):
             return storage_instance
         raise UnsupportedStorageType("Unsupported storage_type: %s" % (storage_type,))
 
-    def define_vm(self, vm_name, vm_definition):
-        if not isinstance(vm_definition, dict):
-            raise ValueError("vm_definition parameter must be of type dict")
-        # 1. check fields
-        vmdef = vm_definition
-        if not vmdef.has_key('name'):
-            vmdef['name'] = vm_name
-        elif vmdef['name'] != vm_name:
-            raise InvalidVMDefinition("Name in VM definition differs from name in define_vm call")
-        if not vmdef.has_key('description'):
-            vmdef['description'] = vmdef['name']
-        if vmdef.has_key('vm_type'):
-            vm_type = vmdef['vm_type']
-        else:
-            raise InvalidVMDefinition("No type set for VM")
-        # 2. Instantiate VM object
-        vm = self._make_virtual_machine(vmdef)
-        # 3. Call vm.vm_define
-        result = vm.define()
-        # 4. Save VM to VMDatabase
+    def provision_vm(self, vm_name, vm_definition):
+        # 1. Instantiate VM object
+        vm = self._make_virtual_machine(vm_name, vm_definition)
+        # 2. Call vm.vm_provision
+        result = vm.provision()
+        # 3. Save VM to VMDatabase
         self.database.define_vm(vm_name, vm_definition)
-        # 5. Return the VM object
+        # 4. Return the VM object
+        return vm
+
+    def define_vm(self, vm_name, vm_definition):
+        # 1. Instantiate VM object
+        vm = self._make_virtual_machine(vm_name, vm_definition)
+        # 2. Call vm.vm_define
+        result = vm.define()
+        # 3. Save VM to VMDatabase
+        self.database.define_vm(vm_name, vm_definition)
+        # 4. Return the VM object
         return vm
 
     def get_vm(self, vm_name):
@@ -91,7 +97,7 @@ class Manager(object):
         vmdef = self.database.get_vm_definition(vm_name)
         if not vmdef:
             raise KeyError("Unknown VM: %s" % (vm_name,))
-        return self._make_virtual_machine(vmdef)
+        return self._make_virtual_machine(vm_name, vmdef)
 
     def list_vms(self):
         """

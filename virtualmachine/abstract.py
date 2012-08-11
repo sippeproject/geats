@@ -46,6 +46,12 @@ class AbstractVirtualMachine(object):
                 except: pass
                 raise
 
+    # provision can be called instead of define to do
+    # additional setup actions, like wiping storage
+    # volumes, generating keys, etc.
+    def provision(self):
+        return self.define()
+
     # stop VM if running, deactivate storage, undefine VM
     def undefine(self):
         self.stop()
@@ -59,7 +65,7 @@ class AbstractVirtualMachine(object):
     # do additional cleanup actions, like wiping the
     # storage volumes.
     def deprovision(self):
-        self.undefine()
+        return self.undefine()
 
     # if not started activate storage, start VM
     def start(self):
@@ -89,6 +95,10 @@ class AbstractVirtualMachine(object):
     def reboot(self):
         self.stop()
         self.start()
+
+    def reinit(self):
+        self.deprovision()
+        self.manager.provision_vm(self.name, self.definition)
 
     # politely ask the VM to shut down
     def shutdown(self):

@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
 from geats.manager import Manager
+import json
 import yaml
-
 import sys
 import os.path
 import argparse
@@ -79,7 +79,7 @@ def cmd_info(args):
             "definition" : vm.get_definition(),
             "state": state,
         }
-        print(yaml.dump(info, default_flow_style=False))
+        print(json.dumps(info, indent=2))
     except KeyError as e:
         print(e.message)
 p_dump = make_subcommand("info", "Dump the VM definition", cmd_info)
@@ -96,19 +96,34 @@ def cmd_status(args):
                 "state": state,
             }
             print "# {0}:".format(vm_name)
-            print(yaml.dump(info, default_flow_style=False))
+            print(json.dumps(info, indent=2))
         except RuntimeError as e:
             print "# {0}: {1}".format(vm_name, e.message)
 p_status = make_subcommand("status", "Show the status of all VMs", cmd_status)
 
 def cmd_define(args):
-    definition = yaml.load(args.yamlfile)
-    args.yamlfile.close()
+    if args.deffile.name.endswith(".json"):
+        definition = json.load(args.deffile)
+    else:
+        definition = yaml.load(args.deffile)
+    args.deffile.close()
     vm = manager.define_vm(args.vm_name, definition)
     print("define: OK ({0})".format(args.vm_name))
 p_define = make_subcommand("define", "Define a new VM", cmd_define)
 p_define.add_argument("vm_name", type=str, help="Name of VM")
-p_define.add_argument("yamlfile", type=file, help="YAML file containing VM definition")
+p_define.add_argument("deffile", type=file, help="File containing VM definition (.yaml or .json)")
+
+def cmd_provision(args):
+    if args.deffile.name.endswith(".json"):
+        definition = json.load(args.deffile)
+    else:
+        definition = yaml.load(args.deffile)
+    args.deffile.close()
+    vm = manager.provision_vm(args.vm_name, definition)
+    print("define: OK ({0})".format(args.vm_name))
+p_provision = make_subcommand("define", "Define & Provision a new VM", cmd_define)
+p_provision.add_argument("vm_name", type=str, help="Name of VM")
+p_provision.add_argument("deffile", type=file, help="File containing VM definition (.yaml or .json)")
 
 def cmd_undefine(args):
     try:
@@ -119,6 +134,16 @@ def cmd_undefine(args):
         print(e.message)
 p_undefine = make_subcommand("undefine", "Undefine a VM", cmd_undefine)
 p_undefine.add_argument("vm_name", type=str, help="Name of VM")
+
+def cmd_reinit(args):
+    try:
+        vm = manager.get_vm(args.vm_name)
+        vm.reinit()
+        print("reinit: OK ({0})".format(args.vm_name))
+    except KeyError as e:
+        print(e.message)
+p_reinit = make_subcommand("reinit", "Re-initialize a VM", cmd_reinit)
+p_reinit.add_argument("vm_name", type=str, help="Name of VM")
 
 def cmd_deprovision(args):
     try:

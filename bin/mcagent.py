@@ -63,7 +63,12 @@ def cmd_info(vm_name):
     return vm_hash
 
 def cmd_define(vm_name, vm_definition):
-    die("Not implemented")
+    manager = Manager()
+    vm = manager.define_vm(vm_name, vm_definition)
+    vm_hash = {
+        "definition": vm.get_definition(),
+        "state": vm.get_state()
+    }
 
 def process_request(request):
     action = request['action']
@@ -75,9 +80,9 @@ def process_request(request):
         die("Missing vm_name parameter", STATUS_MISSING_DATA)
 
     if action == 'define':
-        vm_definition = request['data'].get('vm_definition', None)
+        vm_definition = request['data'].get('definition', None)
         if vm_definition is None:
-            die("Missing vm_definition parameter", STATUS_MISSING_DATA)
+            die("Missing definition parameter", STATUS_MISSING_DATA)
         return cmd_define(vm_name, vm_definition)
 
     if action == 'migrate':
@@ -91,7 +96,12 @@ def process_request(request):
 
     # all the rest are no-argument actions on existing VMs
     manager = Manager()
-    vm = manager.get_vm(vm_name)
+    try:
+        vm = manager.get_vm(vm_name)
+    except KeyError:
+        if action in ('undefine', 'deprovision',):
+            return
+        raise
 
     if action == 'start':
         vm.start()
