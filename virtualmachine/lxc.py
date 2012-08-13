@@ -179,7 +179,7 @@ class LXCVirtualMachine(AbstractVirtualMachine):
                 shutil.rmtree(rootfs)
         cleanup_lxc(config_directory, rootfs)
 
-    def deprovision():
+    def deprovision(self):
         self.undefine()
         with self.lock:
             # as we see from _undefine, it may not remove the rootfs, so force it's removal

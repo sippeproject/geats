@@ -1,6 +1,9 @@
 module MCollective
   module Agent
     class Geats < RPC::Agent
+      action 'provision' do
+        implemented_by "/home/rmt/code/sippe/geats/bin/mcagent.py"
+      end
       action 'define' do
         implemented_by "/home/rmt/code/sippe/geats/bin/mcagent.py"
       end
@@ -14,6 +17,9 @@ module MCollective
         implemented_by "/home/rmt/code/sippe/geats/bin/mcagent.py"
       end
       action 'undefine' do
+        implemented_by "/home/rmt/code/sippe/geats/bin/mcagent.py"
+      end
+      action 'deprovision' do
         implemented_by "/home/rmt/code/sippe/geats/bin/mcagent.py"
       end
       action 'info' do
