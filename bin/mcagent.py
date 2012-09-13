@@ -6,9 +6,11 @@ It reads the request in JSON format from a file, and it
 writes the response to another file in JSON format.
 """
 import sys; sys.path.insert(0, "/home/rmt/code/sippe")
+sys.path.insert(0, "/home/rmt/.local/lib/python2.7/site-packages")
 import json
 import os.path
 import traceback
+import psutil
 from geats.manager import Manager
 
 # exit codes
@@ -41,6 +43,28 @@ def load_request(request_file):
     except:
         report_exception()
 
+def get_system_stats():
+    """Return some stats about the system"""
+    cputimes = psutil.cpu_times()
+    virtmem = psutil.virtual_memory()
+    swapmem = psutil.swap_memory()
+    return {
+        "swap_total": swapmem.total,
+        "swap_used": swapmem.used,
+        "swap_free": swapmem.free,
+        "mem_total": virtmem.total,
+        "mem_used": virtmem.used,
+        "mem_free": virtmem.free,
+        "mem_buffers": virtmem.buffers,
+        "mem_cached": virtmem.cached,
+        "cpu_user": cputimes.user,
+        "cpu_system": cputimes.system,
+        "cpu_idle": cputimes.idle,
+        "cpu_iowait": cputimes.iowait,
+        "load_avg": os.getloadavg(),
+    }
+
+
 def cmd_status():
     manager = Manager()
     vms = {}
@@ -51,7 +75,10 @@ def cmd_status():
             "state" : vm.get_state()
         }
         vms[vm_name] = vm_hash
-    return { "vms" : vms }
+    return {
+        "vms" : vms,
+        "status" : get_system_stats(),
+    }
 
 def cmd_info(vm_name):
     manager = Manager()
