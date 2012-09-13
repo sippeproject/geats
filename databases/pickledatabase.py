@@ -4,6 +4,7 @@
 
 import cPickle as pickle
 import os.path
+import fcntl
 
 class PickleDatabase:
     def __init__(self, config):
@@ -13,8 +14,8 @@ class PickleDatabase:
         self._load()
 
     def _save(self):
-        # XXX - use a lockfile
         fd = open(self.savefile, 'w')
+        fcntl.lockf(fd.fileno(), fcntl.LOCK_EX)
         try:
             pickle.dump(self.vms, fd)
         finally:
@@ -26,6 +27,7 @@ class PickleDatabase:
             self.vms = {}
             return
         fd = open(self.savefile, 'r')
+        fcntl.lockf(fd.fileno(), fcntl.LOCK_SH)
         try:
             self.vms = pickle.load(fd)
             return
