@@ -10,8 +10,8 @@ sys.path.insert(0, "/home/rmt/.local/lib/python2.7/site-packages")
 import json
 import os.path
 import traceback
-import psutil
 from geats.manager import Manager
+from geats.sysstat import SysStat
 
 # exit codes
 STATUS_OK = 0
@@ -45,23 +45,21 @@ def load_request(request_file):
 
 def get_system_stats():
     """Return some stats about the system"""
-    cputimes = psutil.cpu_times()
-    virtmem = psutil.virtual_memory()
-    swapmem = psutil.swap_memory()
+    sysstat = SysStat()
     return {
-        "swap_total": swapmem.total,
-        "swap_used": swapmem.used,
-        "swap_free": swapmem.free,
-        "mem_total": virtmem.total,
-        "mem_used": virtmem.used,
-        "mem_free": virtmem.free,
-        "mem_buffers": virtmem.buffers,
-        "mem_cached": virtmem.cached,
-        "cpu_user": cputimes.user,
-        "cpu_system": cputimes.system,
-        "cpu_idle": cputimes.idle,
-        "cpu_iowait": cputimes.iowait,
-        "load_avg": os.getloadavg(),
+        "swap_total" : sysstat.swaptotal,
+        "swap_used"  : sysstat.swapused,
+        "swap_free"  : sysstat.swapfree,
+        "mem_total"  : sysstat.memtotal,
+        "mem_used"   : sysstat.memused,
+        "mem_free"   : sysstat.memfree,
+        "mem_buffers": sysstat.membuffers,
+        "mem_cached" : sysstat.memcached,
+        #"cpu_user"   : cputimes.user,
+        #"cpu_system" : cputimes.system,
+        #"cpu_idle"   : cputimes.idle,
+        #"cpu_iowait" : cputimes.iowait,
+        "load_avg"   : os.getloadavg(),
     }
 
 
