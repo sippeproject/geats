@@ -179,6 +179,43 @@ def cmd_unlock(args):
 p_unlock = make_subcommand("unlock", "Unlock a VM", cmd_lock)
 p_unlock.add_argument("vm_name", type=str, help="Name of VM")
 
+def cmd_ssh(args):
+    user = ""
+    vm_name = args.vm_name
+    if "@" in vm_name:
+        user, vm_name = args.vm_name.split("@", 1)
+        user = user+"@"
+    try:
+        vm = manager.get_vm(vm_name)
+    except KeyError as e:
+        print(e.message)
+
+    # check if VM is running
+    vm_state = vm.get_state()[0]
+    if vm_state not in ("on", "running"):
+        print("{0} is currently in state '{1}'. Cannot SSH.".format(vm_name, vm_state))
+        return
+
+    # find primary IP address for VM
+    ipaddr = None
+    definition = vm.get_definition()
+    if definition and "network" in definition:
+        network = definition["network"]
+        ipaddr = None
+        for net in network:
+            if "ipaddr" in net:
+                ipaddr = net["ipaddr"]
+                break
+    if ipaddr:
+        cmd = "ssh %s%s" % (user, ipaddr)
+        print("$ "+cmd)
+        os.system(cmd)
+    else:
+        print "Couldn't find ip address for %s" % (vm_name)
+        return
+
+p_ssh = make_subcommand("ssh", "SSH to a VM", cmd_ssh)
+p_ssh.add_argument("vm_name", type=str, help="Name of VM (or user@vm_name)")
 
 args = p_global.parse_args()
 args.func(args)
