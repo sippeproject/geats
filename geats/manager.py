@@ -45,7 +45,7 @@ class Manager(object):
         vm_factory = self.config.get_vm_factory(vm_type)
         if vm_factory:
             vm_config = self.config.get_vm_config(vm_type)
-            return vm_factory(self, vm_definition, vm_config)
+            return vm_factory(self, vm_config, vm_name, vm_definition)
         else:
             raise UnsupportedVMType("Unsupported vm_type: %s" % (vm_type,))
 

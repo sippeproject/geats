@@ -5,6 +5,7 @@ mcagent is called by mcollective to run commands.
 It reads the request in JSON format from a file, and it
 writes the response to another file in JSON format.
 """
+import sys
 import json
 import os.path
 import traceback

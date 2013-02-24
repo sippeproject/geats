@@ -51,8 +51,15 @@ lxc.mount.entry=sysfs %(rootfs)s/sys sysfs defaults  0 0
         fd.close()
 
 def unpack_lxc_rootfs(rootfs, name, targz):
+    """Called to install the rootfs"""
     if not os.path.isdir(rootfs):
         os.mkdir(rootfs)
+    os.system("tar -C '%s' -xzpsSf '%s'" % (rootfs, targz))
+
+def unpack_lxc_overlay(rootfs, name, targz):
+    """Called to install another tarball over the first one"""
+    if not os.path.exists(targz):
+        return # no overlay, and that's OK
     os.system("tar -C '%s' -xzpsSf '%s'" % (rootfs, targz))
 
 def posix_quote(string):
@@ -112,6 +119,7 @@ class LXCVirtualMachine(AbstractVirtualMachine):
         #DEFVAR# template: name of the template in directory of vms.$lxc.template_path to use
         template = self.definition['template']
         targz = os.path.join("%s/%s.tar.gz" % (template_path, template,))
+        overlay_targz = os.path.join("%s/overlay/%s.tar.gz" % (template_path, template,))
         #DEFVAR# network: must contain a single eth0 interface with ipaddress, netmask, gateway, hwaddr, and bridge
         try:
             network = self.definition.get('network')
@@ -138,6 +146,7 @@ class LXCVirtualMachine(AbstractVirtualMachine):
         hostnamefile = os.path.join(rootfs, "etc/hostname")
         if not os.path.exists(hostnamefile):
             unpack_lxc_rootfs(rootfs, name, targz)
+            unpack_lxc_overlay(rootfs, name, overlay_targz)
             create_firstboot_config(
                 rootfs,
                 name,
@@ -181,7 +190,7 @@ class LXCVirtualMachine(AbstractVirtualMachine):
 
     def deprovision(self):
         self.undefine()
-        with self.lock:
+        with self._lock:
             # as we see from _undefine, it may not remove the rootfs, so force it's removal
             rootfs = self._get_rootfs_directory()
             if os.path.exists(rootfs):
@@ -212,3 +221,32 @@ class LXCVirtualMachine(AbstractVirtualMachine):
                 return int(int(fd.read())/1024.0/1024.0)
         return -1
 
+    def get_primary_ip(self):
+        """Used by command line vmctl client"""
+        if "network" not in self.definition:
+            return None
+        network = self.definition["network"]
+        if type(network) != list or len(network) < 1:
+            return None
+        if network[0].get("name", None) != "eth0":
+            return None
+        return network[0].get("ipaddr", None)
+
+    def get_console_command(self):
+        """Used by command line vmctl client"""
+        return "lxc-console --name {0}".format(self.get_name())
+
+    def is_locked(self):
+        lockfile = self._get_rootfs_directory()+".locked"
+        return os.path.exists(lockfile)
+        
+    def lock(self):
+        lockfile = self._get_rootfs_directory()+".locked"
+        if not os.path.exists(lockfile):
+            with open(lockfile,"w") as fd:
+                fd.write("VM has been marked as locked down.\n")
+
+    def unlock(self):
+        lockfile = self._get_rootfs_directory()+".locked"
+        if os.path.exists(lockfile):
+            os.unlink(lockfile)

@@ -7,7 +7,7 @@ setup(
     version = "0.9",
     packages = find_packages(),
     package_data = { '': [ "*.rst", "LICENSE" ] },
-    scripts = ["bin/vmctl"],
+    scripts = ["bin/vmctl", "bin/mcagent.py"],
     license = "LGPL 2.1",
     keywords = "LXC virtualization",
     classifiers = [

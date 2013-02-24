@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 from geats.manager import Manager
+from geats.exceptions import VMException
 import json
 import yaml
 import sys
@@ -176,8 +177,35 @@ def cmd_unlock(args):
     except NotImplementedError as e:
         print("lock: NotImplementedError ({0})".format(args.vm_name))
         sys.exit(1)
-p_unlock = make_subcommand("unlock", "Unlock a VM", cmd_lock)
+p_unlock = make_subcommand("unlock", "Unlock a VM", cmd_unlock)
 p_unlock.add_argument("vm_name", type=str, help="Name of VM")
+
+def cmd_console(args):
+    vm_name = args.vm_name
+    try:
+        vm = manager.get_vm(vm_name)
+    except KeyError as e:
+        print(e.message)
+        sys.exit(1)
+
+    vm_state = vm.get_state()[0]
+    if vm_state not in ("on", "running"):
+        print("{0} is currently in state '{1}'. Cannot access console.".format(vm_name, vm_state))
+        return
+
+    if not hasattr(vm, "get_console_command"):
+        print("{0} doesn't support console access.".format(vm_name))
+        return
+    
+    console_command = vm.get_console_command()
+    if not console_command:
+        print("{0} doesn't support console access.".format(vm_name))
+        return
+
+    print("$ {0}".format(console_command))
+    os.system(console_command)
+p_console = make_subcommand("console", "Access VM console", cmd_console)
+p_console.add_argument("vm_name", type=str, help="Name of VM")
 
 def cmd_ssh(args):
     user = ""
@@ -189,6 +217,7 @@ def cmd_ssh(args):
         vm = manager.get_vm(vm_name)
     except KeyError as e:
         print(e.message)
+        sys.exit(1)
 
     # check if VM is running
     vm_state = vm.get_state()[0]
@@ -197,25 +226,23 @@ def cmd_ssh(args):
         return
 
     # find primary IP address for VM
-    ipaddr = None
-    definition = vm.get_definition()
-    if definition and "network" in definition:
-        network = definition["network"]
-        ipaddr = None
-        for net in network:
-            if "ipaddr" in net:
-                ipaddr = net["ipaddr"]
-                break
+    if not hasattr(vm, "get_primary_ip"):
+        print("{0} doesn't expose an IP address.  Cannot SSH.".format(vm_name))
+        return
+    ipaddr = vm.get_primary_ip()
     if ipaddr:
         cmd = "ssh %s%s" % (user, ipaddr)
-        print("$ "+cmd)
+        print("$ {0}".format(cmd))
         os.system(cmd)
     else:
-        print "Couldn't find ip address for %s" % (vm_name)
+        print("{0} doesn't expose an IP address.  Cannot SSH.".format(vm_name))
         return
 
 p_ssh = make_subcommand("ssh", "SSH to a VM", cmd_ssh)
 p_ssh.add_argument("vm_name", type=str, help="Name of VM (or user@vm_name)")
 
 args = p_global.parse_args()
-args.func(args)
+try:
+    args.func(args)
+except VMException as e:
+    print("Error: {0}".format(e.message))
