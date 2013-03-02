@@ -27,7 +27,9 @@ def cmd_list(args):
     for vm_name in manager.list_vms():
         vm = manager.get_vm(vm_name)
         state, substate = vm.get_state()
-        print("{0}: {1}/{2} ({3})".format(vm_name, state, substate, vm.get_description()))
+        locked = vm.is_locked() and " [locked]" or ""
+        print("{0}: {1}/{2} ({3}){4}".format(
+            vm_name, state, substate, vm.get_description(), locked))
 p_list = make_subcommand("list", "List all VMs", cmd_list)
 
 def cmd_start(args):
@@ -79,6 +81,7 @@ def cmd_info(args):
         info = {
             "definition" : vm.get_definition(),
             "state": state,
+            "locked": vm.is_locked(),
         }
         print(json.dumps(info, indent=2))
     except KeyError as e:
