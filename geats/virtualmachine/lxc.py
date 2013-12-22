@@ -127,7 +127,7 @@ class LXCVirtualMachine(AbstractVirtualMachine):
             ip = eth0['ipaddr']
             netmask = eth0['netmask']
             gateway = eth0['gateway']
-	    hwaddr = eth0['hwaddr']
+            hwaddr = eth0['hwaddr']
             bridge = eth0['bridge']
         except KeyError, IndexError:
             raise VMException("Missing or incomplete network definition")

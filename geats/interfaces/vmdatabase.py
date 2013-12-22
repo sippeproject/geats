@@ -3,19 +3,32 @@ class IVMDatabase:
     Store and retrieve VM information.  It's important that it does this
     without losing any information (eg. from a full disk)
     """
-    def list_vms():
+    def list():
         """
-        Return a list of defined VMs by name
+        Return a list of entries by name
         """
-    def define_vm(vm_name, vm_definition):
+    def create(name, definition, **extras):
         """
-        Create the VM in the database.
+        Create the entry in the database.
+        @param name: VM name (primary key)
+        @param definition: dict of the VM definition
+        @param extras: dict of dicts to be used by plugins, etc.
         """
-    def undefine_vm(vm_name):
+    def update(vm_name, definition=None, **extras):
         """
-        Remove the VM from the database.
+        Update the definition or the extras dictionary
         """
-    def get_vm_definition(vm_name):
+    def delete(name):
         """
-        Return the VM definition for the given VM.
+        Remove the name from the database.
+        """
+    def get_definition(name):
+        """
+        Return the definition dict for the given name.
+        """
+    def get(name, key=None):
+        """
+        Return the given key (or all if key is None) for the given name.
+        If the key is not found in the store for $name,
+        returns an empty dict.
         """

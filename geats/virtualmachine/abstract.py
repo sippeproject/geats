@@ -80,14 +80,13 @@ class AbstractVirtualMachine(object):
         different scenarios.  For example, it might wipe storage
         volumes first or generate some new access keys.
         """
-        
         return self.define()
 
 
     def undefine(self):
         """
-        Deactivate storage and undefine the VM.  It will also ask
-        the database to undefine it (forget about it).
+        Deactivate storage and undefine the VM.
+        It will also tell the database to delete it.
         If a VM is running, it will first be stopped.
         """
         if self.is_locked():
@@ -97,7 +96,7 @@ class AbstractVirtualMachine(object):
             self.deactivate_storage()
             self._undefine()
             ### XXX can I find a nicer way?
-            self.manager.database.undefine_vm(self.name)
+            self.manager.database.delete(self.name)
 
 
     def deprovision(self):
@@ -250,6 +249,7 @@ class AbstractVirtualMachine(object):
         If relevant, return the primary IP of this VM, otherwise None.
         """
         return None
+
 
     def get_console_command(self):
         """

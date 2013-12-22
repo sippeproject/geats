@@ -10,7 +10,7 @@ class IVirtualMachine:
             (paused, substate)
             (stopped, substate)
             (unknown, substate)
-        
+
         The substates may be used in the event that there are additional
         steps involved in the lifecycle of a particular type of VM.
         An example might be "paused/migrating".  By default, substate is
@@ -20,7 +20,7 @@ class IVirtualMachine:
         """
         Do any actions to define this VM in the hypervisor.
         eg. Create libvirt XML, LXC config file, etc.
-        
+
         The VM definition will probably have been passed in with the
         constructor.  It's OK for define() to modify the vm definition.
         Modifications after this point will be ignored.
@@ -56,9 +56,9 @@ class IVirtualMachine:
           3. Raise an Exception if it failed.
 
         Shutdown can return immediately, without confirming that it succeeded.
-        
+
         Indeed, it may not succeed (eg. ACPI shutdown was ignored)
-        
+
         Storage Volumes may remain active (if appropriate)
         """
     def undefine():

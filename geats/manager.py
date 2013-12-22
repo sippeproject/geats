@@ -76,7 +76,7 @@ class Manager(object):
         # 2. Call vm.vm_provision
         result = vm.provision()
         # 3. Save VM to VMDatabase
-        self.database.define_vm(vm_name, vm_definition)
+        self.database.create(vm_name, vm_definition)
         # 4. Return the VM object
         return vm
 
@@ -86,7 +86,7 @@ class Manager(object):
         # 2. Call vm.vm_define
         result = vm.define()
         # 3. Save VM to VMDatabase
-        self.database.define_vm(vm_name, vm_definition)
+        self.database.create(vm_name, vm_definition)
         # 4. Return the VM object
         return vm
 
@@ -94,7 +94,7 @@ class Manager(object):
         """
         Given a VM name, return the VM instance.
         """
-        vmdef = self.database.get_vm_definition(vm_name)
+        vmdef = self.database.get_definition(vm_name)
         if not vmdef:
             raise KeyError("Unknown VM: %s" % (vm_name,))
         return self._make_virtual_machine(vm_name, vmdef)
@@ -103,7 +103,7 @@ class Manager(object):
         """
         Return a list of all VMs by name
         """
-        return self.database.list_vms()
+        return self.database.list()
 
     def get_lock(self, key):
         """

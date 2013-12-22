@@ -1,4 +1,8 @@
-
+class AlreadyExistsException(RuntimeError):
+    """
+    Generated on a .create() DB call where the key already
+    exists.
+    """
 class InvalidVMDefinition(RuntimeError):
     """
     The VM definition was deemed invalid either by the
@@ -28,6 +32,7 @@ class FailedToAcquireLockException(VMException):
     Each VM has a lockfile that prevents multiple operations
     being performed on it simultaneously.
     """
+
 class VMLockedException(VMException):
     """
     VMLockedException means that VM.is_locked() returned True
@@ -35,3 +40,5 @@ class VMLockedException(VMException):
     Most commonly, this is to prevent a VM being accidently
     undefine'd.
     """
+
+

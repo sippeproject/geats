@@ -240,7 +240,6 @@ def cmd_ssh(args):
     else:
         print("{0} doesn't expose an IP address.  Cannot SSH.".format(vm_name))
         return
-
 p_ssh = make_subcommand("ssh", "SSH to a VM", cmd_ssh)
 p_ssh.add_argument("vm_name", type=str, help="Name of VM (or user@vm_name)")
 

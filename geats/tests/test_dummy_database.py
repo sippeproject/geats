@@ -12,15 +12,16 @@ class DummyDatabaseTest(unittest.TestCase):
             "name": "vm001",
             "description": "vm001 / appserver 001",
         }
-    def test_define_vm(self):
-        self.db.define_vm('vm001', self.vmdef)
 
-    def test_list_vms(self):
-        self.db.define_vm('vm001', self.vmdef)
-        vms = self.db.list_vms()
+    def test_create_vm(self):
+        self.db.create('vm001', self.vmdef)
+
+    def test_list(self):
+        self.db.create('vm001', self.vmdef)
+        vms = self.db.list()
         self.assertEqual(vms, ["vm001"]) 
 
-    def test_get_vm_definition(self):
-        self.db.define_vm('vm001', self.vmdef)
-        vmdef = self.db.get_vm_definition('vm001')
+    def test_get_definition(self):
+        self.db.create('vm001', self.vmdef)
+        vmdef = self.db.get_definition('vm001')
         self.assertEqual(vmdef, self.vmdef)

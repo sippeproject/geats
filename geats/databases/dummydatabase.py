@@ -3,18 +3,37 @@
 #
 class DummyDatabase:
     def __init__(self, config):
-        self.vms = {}
+        self.datastore = {}
 
-    def define_vm(self, name, vm_definition):
-        self.vms[name] = vm_definition
+    def create(self, name, definition, **extras):
+        self.datastore[name] = extras
+        extras['definition'] = definition
 
-    def undefine_vm(self, name):
-        if name in self.vms:
-            del self.vms[name]
+    def update(self, name, definition=None, **extras):
+        d = self.datastore[name]
+        if definition:
+            d['definition'] = d
+        d.update(extras)
 
-    def list_vms(self):
-        return self.vms.keys()
+    def delete(self, name):
+        if name in self.datastore:
+            del self.datastore[name]
 
-    def get_vm_definition(self, vm_name):
-        return self.vms.get(vm_name, None)
+    def list(self):
+        return self.datastore.keys()
+
+    def get_definition(self, name):
+        d = self.datastore.get(name, None)
+        if d:
+            return d["definition"]
+        else:
+            return None
+
+    def get(self, name, key=None):
+        if name not in self.datastore:
+            return None
+        if key is None:
+            return self.datastore[name]
+        else:
+            return self.datastore[name].get(key, {})
 
