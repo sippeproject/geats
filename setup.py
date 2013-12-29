@@ -4,7 +4,9 @@ from setuptools import setup, find_packages
 
 setup(
     name = "geats",
-    version = "0.9",
+    version = "0.9.1",
+    description = "Local Resource Manager for VMs and Containers",
+    url = "https://github.com/sippeproject/geats",
     packages = find_packages(),
     package_data = { '': [ "*.rst", "LICENSE" ] },
     scripts = ["bin/vmctl", "bin/mcagent.py"],
